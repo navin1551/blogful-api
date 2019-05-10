@@ -59,7 +59,7 @@ describe.only("Articles Endpoints", function() {
       return db.into("blogful_articles").insert(testArticles);
     });
 
-    it("GET /articles responds with 200 and all of the articles", () => {
+    it("GET / articles responds with 200 and all of the articles", () => {
       return supertest(app)
         .get("/articles")
         .expect(200, testArticles);
