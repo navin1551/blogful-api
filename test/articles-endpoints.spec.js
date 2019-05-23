@@ -1,4 +1,3 @@
-const { expect } = require("chai");
 const knex = require("knex");
 const app = require("../src/app");
 const {
@@ -32,9 +31,9 @@ describe("Articles Endpoints", function() {
     )
   );
 
-  describe("GET /api/articles", () => {
-    context("Given no articles", () => {
-      it("responds with 200 and an empty list", () => {
+  describe(`GET /api/articles`, () => {
+    context(`Given no articles`, () => {
+      it(`responds with 200 and an empty list`, () => {
         return supertest(app)
           .get("/api/articles")
           .expect(200, []);
@@ -68,7 +67,7 @@ describe("Articles Endpoints", function() {
       beforeEach("insert malicious article", () => {
         return db
           .into("blogful_users")
-          .insert([testUsers])
+          .insert(testUsers)
           .then(() => {
             return db.into("blogful_articles").insert([maliciousArticle]);
           });
@@ -86,9 +85,9 @@ describe("Articles Endpoints", function() {
     });
   });
 
-  describe("GET /api/articles/:article_id", () => {
-    context("Given no articles", () => {
-      it("responds with 404", () => {
+  describe(`GET /api/articles/:article_id`, () => {
+    context(`Given no articles`, () => {
+      it(`responds with 404`, () => {
         const articleId = 123456;
         return supertest(app)
           .get(`/api/articles/${articleId}`)
@@ -118,14 +117,14 @@ describe("Articles Endpoints", function() {
       });
     });
 
-    context("Given an XSS attack article", () => {
+    context(`Given an XSS attack article`, () => {
       const testUsers = makeUsersArray();
       const { maliciousArticle, expectedArticle } = makeMaliciousArticle();
 
       beforeEach("insert malicious article", () => {
         return db
           .into("blogful_users")
-          .insert([testUsers])
+          .insert(testUsers)
           .then(() => {
             return db.into("blogful_articles").insert([maliciousArticle]);
           });
@@ -143,14 +142,13 @@ describe("Articles Endpoints", function() {
     });
   });
 
-  describe("POST /api/articles", () => {
+  describe(`POST /api/articles`, () => {
     const testUsers = makeUsersArray();
     beforeEach("insert malicious article", () => {
       return db.into("blogful_users").insert(testUsers);
     });
 
-    it("creates an article, responding with 201 and the new article", function() {
-      this.retries(3);
+    it(`creates an article, responding with 201 and the new article`, () => {
       const newArticle = {
         title: "Test new article",
         style: "Listicle",
@@ -166,8 +164,10 @@ describe("Articles Endpoints", function() {
           expect(res.body.content).to.eql(newArticle.content);
           expect(res.body).to.have.property("id");
           expect(res.headers.location).to.eql(`/api/articles/${res.body.id}`);
-          const expected = new Date().toLocaleString();
-          const actual = new Date(res.body.date_published).toLocaleString();
+          const expected = new Intl.DateTimeFormat("en-US").format(new Date());
+          const actual = new Intl.DateTimeFormat("en-US").format(
+            new Date(res.body.date_published)
+          );
           expect(actual).to.eql(expected);
         })
         .then(res =>
@@ -214,6 +214,7 @@ describe("Articles Endpoints", function() {
     });*/
 
     //refactoring of above tests into loop. Only do if feel comfortable if else stick with above test code
+
     const requiredFields = ["title", "style", "content"];
 
     requiredFields.forEach(field => {
@@ -238,7 +239,7 @@ describe("Articles Endpoints", function() {
     it("removes XSS attack content from response", () => {
       const { maliciousArticle, expectedArticle } = makeMaliciousArticle();
       return supertest(app)
-        .post("/api/articles")
+        .post(`/api/articles`)
         .send(maliciousArticle)
         .expect(201)
         .expect(res => {
@@ -248,15 +249,16 @@ describe("Articles Endpoints", function() {
     });
   });
 
-  describe("DELETE /api/articles/:article_id", () => {
-    context("Given no articles", () => {
-      it("responds with 404", () => {
+  describe(`DELETE /api/articles/:article_id`, () => {
+    context(`Given no articles`, () => {
+      it(`responds with 404`, () => {
         const articleId = 123456;
         return supertest(app)
           .delete(`/api/articles/${articleId}`)
           .expect(404, { error: { message: `Article doesn't exist` } });
       });
     });
+
     context("Given there are articles in the database", () => {
       const testUsers = makeUsersArray();
       const testArticles = makeArticlesArray();
@@ -280,19 +282,19 @@ describe("Articles Endpoints", function() {
           .expect(204)
           .then(res =>
             supertest(app)
-              .get("/api/articles")
+              .get(`/api/articles`)
               .expect(expectedArticles)
           );
       });
     });
   });
 
-  describe.only("PATCH /api/articles/:article_id", () => {
-    context("Given no articles", () => {
-      it("responds with 404", () => {
+  describe(`PATCH /api/articles/:article_id`, () => {
+    context(`Given no articles`, () => {
+      it(`responds with 404`, () => {
         const articleId = 123456;
         return supertest(app)
-          .patch(`/api/article/${articleId}`)
+          .delete(`/api/articles/${articleId}`)
           .expect(404, { error: { message: `Article doesn't exist` } });
       });
     });
@@ -317,7 +319,6 @@ describe("Articles Endpoints", function() {
           style: "Interview",
           content: "updated article content"
         };
-
         const expectedArticle = {
           ...testArticles[idToUpdate - 1],
           ...updateArticle
@@ -333,19 +334,19 @@ describe("Articles Endpoints", function() {
           );
       });
 
-      it("responds with 400 when no required fields supplied", () => {
+      it(`responds with 400 when no required fields supplied`, () => {
         const idToUpdate = 2;
         return supertest(app)
           .patch(`/api/articles/${idToUpdate}`)
           .send({ irrelevantField: "foo" })
           .expect(400, {
             error: {
-              message: `Request body must contain either 'title', 'style' or 'content'`
+              message: `Request body must content either 'title', 'style' or 'content'`
             }
           });
       });
 
-      it("responds with 204 when updating only a subset of fields", () => {
+      it(`responds with 204 when updating only a subset of fields`, () => {
         const idToUpdate = 2;
         const updateArticle = {
           title: "updated article title"
@@ -354,6 +355,7 @@ describe("Articles Endpoints", function() {
           ...testArticles[idToUpdate - 1],
           ...updateArticle
         };
+
         return supertest(app)
           .patch(`/api/articles/${idToUpdate}`)
           .send({
@@ -361,11 +363,11 @@ describe("Articles Endpoints", function() {
             fieldToIgnore: "should not be in GET response"
           })
           .expect(204)
-          .then(res => {
+          .then(res =>
             supertest(app)
               .get(`/api/articles/${idToUpdate}`)
-              .expect(expectedArticle);
-          });
+              .expect(expectedArticle)
+          );
       });
     });
   });
